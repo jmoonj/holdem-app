@@ -894,6 +894,228 @@ h1 {
 .btn-chat-send:hover:not(:disabled) { background: #388bfd; }
 .btn-chat-send:disabled { background: #21262d; color: #484f58; cursor: not-allowed; }
 
+/* ─── Position Badges (D / SB / BB) ─────────────── */
+/* 추가됨: 딜러/스몰블라인드/빅블라인드 포지션 배지 */
+
+.slot-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.pos-badges {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.badge-pos {
+  font-size: 0.6rem;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 4px;
+  line-height: 1.4;
+  letter-spacing: 0.3px;
+}
+
+.badge-dealer { background: #e0e0e0; color: #0d1117; }
+.badge-sb     { background: #f1c40f; color: #0d1117; }
+.badge-bb     { background: #e67e22; color: #fff;    }
+
+/* ─── Hand Info Bar (기능 2+3) ───────────────────── */
+/* 추가됨: 실시간 족보 + 강도 표시 */
+
+.hand-info-bar {
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hand-info-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hand-info-name {
+  font-size: 0.88rem;
+  font-weight: bold;
+}
+
+.hand-stars {
+  font-size: 0.9rem;
+  color: #ffd700;
+  letter-spacing: 1px;
+}
+
+.hand-strength-text {
+  font-size: 0.75rem;
+  color: #8b949e;
+}
+
+.hand-draw-text {
+  font-size: 0.75rem;
+  color: #80cbc4;
+}
+
+/* ─── Tutorial Overlay (기능 4) ──────────────────── */
+/* 추가됨: 튜토리얼 전체화면 오버레이 */
+
+.tutorial-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.tutorial-card {
+  background: #161b22;
+  border: 2px solid #ffd700;
+  border-radius: 16px;
+  padding: 28px 32px;
+  width: min(480px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 0 40px rgba(255,215,0,0.2);
+}
+
+.tutorial-title {
+  font-size: 1.1rem;
+  color: #ffd700;
+  text-align: center;
+  font-weight: bold;
+}
+
+.tutorial-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tutorial-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tut-badge {
+  font-size: 0.75rem;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 6px;
+  white-space: nowrap;
+  min-width: 62px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.tut-check { background: #16a085; color: #fff; }
+.tut-call  { background: #27ae60; color: #fff; }
+.tut-raise { background: #f39c12; color: #fff; }
+.tut-fold  { background: #c0392b; color: #fff; }
+.tut-ai    { background: #4a148c; color: #fff; }
+
+.tut-desc {
+  font-size: 0.82rem;
+  color: #c9d1d9;
+  line-height: 1.4;
+}
+
+.tutorial-hand-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid #21262d;
+}
+.tutorial-hand-row:last-child { border-bottom: none; }
+
+.tut-hand-rank {
+  width: 22px;
+  height: 22px;
+  background: #21262d;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  color: #8b949e;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.tut-hand-name {
+  font-size: 0.85rem;
+  color: #e0e0e0;
+}
+
+.tutorial-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tut-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.tut-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #30363d;
+  transition: background 0.2s;
+}
+.tut-dot.active { background: #ffd700; }
+
+.btn-tut-action {
+  padding: 9px 22px;
+  background: #ffd700;
+  color: #0d1117;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.btn-tut-action:hover { background: #ffe44d; }
+
+/* 추가됨: 우하단 고정 "?" 도움말 버튼 */
+.btn-help {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #21262d;
+  border: 2px solid #30363d;
+  color: #8b949e;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 999;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.btn-help:hover { background: #ffd700; color: #0d1117; border-color: #ffd700; }
+
 /* ─── Responsive ─────────────────────────────────── */
 
 @media (max-width: 768px) {

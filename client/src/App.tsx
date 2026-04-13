@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, Street, AIRecommendation, PlayerState, ShowdownResult } from "./types";
+import { getHandInfo } from "./handEval"; // 추가됨
 
 const API_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:80";
 
@@ -89,12 +90,86 @@ function ConfidenceDots({ level }: { level: "low" | "medium" | "high" }) {
   );
 }
 
+// 추가됨: 튜토리얼 오버레이 컴포넌트
+function TutorialOverlay({ onClose }: { onClose: () => void }) {
+  const [slide, setSlide] = useState(0);
+  const slides = [
+    {
+      title: "🃏 버튼 설명",
+      type: "buttons" as const,
+      rows: [
+        { label: "CHECK",  cls: "tut-check", desc: "추가 베팅 없이 다음으로 넘김 (베팅이 없을 때만 가능)" },
+        { label: "CALL",   cls: "tut-call",  desc: "상대방 베팅 금액만큼 따라감" },
+        { label: "RAISE",  cls: "tut-raise", desc: "베팅 금액을 올림 (슬라이더로 금액 조절)" },
+        { label: "FOLD",   cls: "tut-fold",  desc: "패를 포기하고 이번 핸드 기권" },
+        { label: "조언받기", cls: "tut-ai",  desc: "AI 코치가 현재 패에 맞는 액션 추천" },
+      ],
+    },
+    {
+      title: "🏆 족보 순서 (약함 → 강함)",
+      type: "hands" as const,
+      hands: [
+        "하이카드", "원페어", "투페어", "트리플",
+        "스트레이트", "플러시", "풀하우스", "포카드",
+        "스트레이트 플러시", "로열 플러시",
+      ],
+    },
+  ];
+  const isLast = slide === slides.length - 1;
+  const current = slides[slide];
+  return (
+    <div className="tutorial-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="tutorial-card">
+        <h2 className="tutorial-title">{current.title}</h2>
+        <div className="tutorial-body">
+          {current.type === "buttons"
+            ? current.rows.map((r, i) => (
+                <div key={i} className="tutorial-row">
+                  <span className={`tut-badge ${r.cls}`}>{r.label}</span>
+                  <span className="tut-desc">{r.desc}</span>
+                </div>
+              ))
+            : current.hands.map((h, i) => (
+                <div key={i} className="tutorial-hand-row">
+                  <span className="tut-hand-rank">{i + 1}</span>
+                  <span className="tut-hand-name">{h}</span>
+                </div>
+              ))
+          }
+        </div>
+        <div className="tutorial-footer">
+          <div className="tut-dots">
+            {slides.map((_, i) => <span key={i} className={`tut-dot ${i === slide ? "active" : ""}`} />)}
+          </div>
+          {isLast
+            ? <button className="btn-tut-action" onClick={onClose}>게임 시작! 🎮</button>
+            : <button className="btn-tut-action" onClick={() => setSlide(s => s + 1)}>다음 →</button>
+          }
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Player Slot Card ──────────────────────────────
 
-function PlayerSlotCard({ player, showCards }: { player: PlayerState; showCards: boolean }) {
+// 변경됨: isSB, isBB props 추가 + 포지션 배지 표시
+function PlayerSlotCard({ player, showCards, isSB, isBB }: {
+  player: PlayerState;
+  showCards: boolean;
+  isSB?: boolean;
+  isBB?: boolean;
+}) {
   return (
     <div className={`slot-card ${player.folded ? "slot-folded" : ""}`}>
-      <div className="slot-name">{player.isDealer ? "🎯 " : ""}Player {player.id}</div>
+      <div className="slot-name-row">
+        <span className="slot-name">Player {player.id}</span>
+        <span className="pos-badges">
+          {player.isDealer && <span className="badge-pos badge-dealer">D</span>}
+          {isSB && <span className="badge-pos badge-sb">SB</span>}
+          {isBB && <span className="badge-pos badge-bb">BB</span>}
+        </span>
+      </div>
       <div className="slot-cards">
         {player.folded
           ? <span className="fold-badge">FOLD</span>
@@ -138,6 +213,9 @@ function App() {
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
 
+  // 추가됨: 튜토리얼 상태
+  const [showTutorial, setShowTutorial] = useState(false);
+
   const gameStarted = gameId !== null;
   const isRiver = street === "river";
   const myState = playerStates.find(p => p.isUser);
@@ -150,6 +228,16 @@ function App() {
   const checkCallHighlight = canCheck ? recAction === "check" : recAction === "call";
 
   useEffect(() => { loadPlayerChips(); }, []);
+
+  // 추가됨: 최초 진입 시 tutorialSeen 없으면 자동 표시
+  useEffect(() => {
+    if (!localStorage.getItem("tutorialSeen")) setShowTutorial(true);
+  }, []);
+
+  const closeTutorial = () => {
+    localStorage.setItem("tutorialSeen", "true");
+    setShowTutorial(false);
+  };
 
   const loadPlayerChips = async () => {
     try {
@@ -375,6 +463,18 @@ function App() {
   const seats = SEAT_MAP[playerCount] || SEAT_MAP[4];
   const profit = showdown ? (showdown.updatedChips ?? totalChips) - sessionStartChips : 0;
 
+  // 추가됨: SB/BB 포지션 계산 (딜러=index 0, SB=index 1, BB=index 2 % playerCount)
+  const sbPlayerId = playerStates.length > 0 ? playerStates[1 % playerStates.length]?.id : null;
+  const bbPlayerId = playerStates.length > 0 ? playerStates[2 % playerStates.length]?.id : null;
+  const myIsSB = myState ? myState.id === sbPlayerId : false;
+  const myIsBB = myState ? myState.id === bbPlayerId : false;
+
+  // 추가됨: 실시간 족보 계산 (myCards + communityCards 변경 시만 재계산)
+  const handInfo = useMemo(() => {
+    if (myCards.length === 0) return null;
+    return getHandInfo(myCards, communityCards);
+  }, [myCards, communityCards]);
+
   // 레이즈 옵션 closest 계산
   const getRaiseClosest = () => {
     if (!recommendation?.raise_options || !recommendation.raise_amount || recommendation.raise_amount <= 0) return -1;
@@ -507,7 +607,13 @@ function App() {
             <div className="table-scene">
               {otherPlayers.map((player, i) => (
                 <div key={player.id} className={`slot-wrapper seat-${seats[i] || "top-center"}`}>
-                  <PlayerSlotCard player={player} showCards={false} />
+                  {/* 변경됨: SB/BB 포지션 배지 전달 */}
+                  <PlayerSlotCard
+                    player={player}
+                    showCards={false}
+                    isSB={player.id === sbPlayerId}
+                    isBB={player.id === bbPlayerId}
+                  />
                 </div>
               ))}
               <div className="poker-table-oval">
@@ -533,7 +639,13 @@ function App() {
           {!showdown && (
             <div className="my-hand-section">
               <div className="my-hand-header">
-                <span className="my-hand-name">{myState?.isDealer ? "🎯 " : ""}나 (Player 1)</span>
+                <span className="my-hand-name">나 (Player 1)</span>
+                {/* 변경됨: 포지션 배지 표시 */}
+                <span className="pos-badges">
+                  {myState?.isDealer && <span className="badge-pos badge-dealer">D</span>}
+                  {myIsSB && <span className="badge-pos badge-sb">SB</span>}
+                  {myIsBB && <span className="badge-pos badge-bb">BB</span>}
+                </span>
                 {myState && <span className="slot-chips">{myState.chips}칩</span>}
                 {myState && myState.currentBet > 0 && <span className="slot-bet">베팅 {myState.currentBet}칩</span>}
                 {myState?.folded && <span className="fold-badge">FOLD</span>}
@@ -547,6 +659,23 @@ function App() {
                   </>
                 }
               </div>
+              {/* 추가됨: 실시간 족보 + 강도 표시 (기능 2+3) */}
+              {handInfo && gameStarted && !showdown && (
+                <div className="hand-info-bar">
+                  <div className="hand-info-top">
+                    <span className="hand-info-name" style={{ color: handInfo.color }}>
+                      현재 족보: {handInfo.description}
+                    </span>
+                    <span className="hand-stars">
+                      {"★".repeat(handInfo.stars)}{"☆".repeat(5 - handInfo.stars)}
+                    </span>
+                  </div>
+                  <span className="hand-strength-text">{handInfo.strengthText}</span>
+                  {handInfo.drawText && (
+                    <span className="hand-draw-text">💡 {handInfo.drawText}</span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -758,6 +887,12 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* 추가됨: 튜토리얼 오버레이 */}
+      {showTutorial && <TutorialOverlay onClose={closeTutorial} />}
+
+      {/* 추가됨: 우하단 고정 "?" 도움말 버튼 */}
+      <button className="btn-help" onClick={() => setShowTutorial(true)} title="도움말">?</button>
     </div>
   );
 }

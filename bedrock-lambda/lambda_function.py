@@ -76,14 +76,29 @@ def evaluate_5(cards):
     return (0, ranks)
 
 
-# 추가됨: 보유 카드 중 최선의 5장 조합 반환
+# 추가됨: 5장 미만 카드(홀카드 2장 등)에 대한 족보 판단
+def evaluate_available(cards):
+    if not cards:
+        return (0, [])
+    ranks = sorted([r for r, s in cards], reverse=True)
+    cnt = Counter(ranks)
+    counts = sorted(cnt.values(), reverse=True)
+
+    if counts[0] == 4: return (7, ranks)      # 포카드 (방어용)
+    if counts[0] == 3: return (3, ranks)      # 트리플
+    if counts[:2] == [2, 2]: return (2, ranks) # 투페어
+    if counts[0] == 2: return (1, ranks)      # 원페어
+    return (0, ranks)                          # 하이카드
+
+
+# 변경됨: 보유 카드 중 최선의 5장 조합 반환 (5장 미만 시 evaluate_available 호출)
 def best_hand(hole, community):
     all_cards = hole + community
+    if len(all_cards) == 0:
+        return (0, [])
+    # 변경됨: 5장 미만이면 evaluate_available로 정확히 판단 (기존: 하이카드 폴백)
     if len(all_cards) < 5:
-        if len(all_cards) == 0:
-            return (0, [])
-        # 5장 미만: 있는 카드로만 평가
-        return evaluate_5(all_cards) if len(all_cards) == 5 else (0, sorted([r for r, s in all_cards], reverse=True))
+        return evaluate_available(all_cards)
     best = None
     for combo in combinations(all_cards, 5):
         result = evaluate_5(list(combo))

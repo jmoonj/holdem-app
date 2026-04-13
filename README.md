@@ -11,6 +11,9 @@ AWS 3-Tier 아키텍처(S3 + EC2 + RDS)와 Amazon Bedrock Lambda를 활용한 �
 - AI 코치 챗봇 (게임 상황 기반 질의응답)
 - 칩 영속 관리 (RDS), 칩 충전 (+500칩) 기능
 - AI 플레이어 칩 누적 보존 / 파산 시 자동 부활
+- 실시간 족보 표시 + 강도 안내 (하이카드~로열플러시, ★ 게이지)
+- SB / BB / D 포지션 배지 표시
+- 첫 진입 튜토리얼 오버레이 (버튼 설명 + 족보 순서)
 
 ---
 
@@ -123,6 +126,7 @@ holdem-app/
 ├── client/
 │   ├── src/
 │   │   ├── App.tsx         # 메인 UI
+│   │   ├── handEval.ts     # 프론트엔드 족보 계산 유틸리티
 │   │   └── types.ts
 │   ├── .env.example
 │   └── package.json
